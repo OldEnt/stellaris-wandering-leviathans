@@ -1,0 +1,190 @@
+namespace = wanderingleviathans
+# In game use:
+# effect set_global_flag = wanderingleviathans_disabled			Disables Wandering Leviathans AI	(global)
+# event wanderingleviathans.10									Flips Wandering Leviathans AI for an owner of currently scoped fleet. (fleet) Redirects to wanderingleviathans.11
+# event wanderingleviathans.11									Flips Wandering Leviathans AI for currently scoped country (country).
+# 
+# Additional effects:
+# set_country_flag = wanderingleviathans_country_disabled		Marks country as excluded from AI assist.
+# set_star_flag = wanderingleviathans_star_forbidden			Marks solar_system as forbidden to AI to wander in. In game use: effect solar_system = { set_star_flag = wanderingleviathans_star_forbidden } while on any fleet/ planet.
+# set_fleet_flag = wanderingleviathans_fleet_timeout			Marks fleet as excluded from AI use.
+# set_country_flag = wanderingleviathans_country_forbidden		Territory of a country with this flag is excluded from the AI.
+# 
+# Marks mod as installed for other mods to check.
+country_event = {
+	id = wanderingleviathans.1
+	is_triggered_only = yes
+	hide_window = yes
+	trigger = {
+		NOT = {
+			has_global_flag = wanderingleviathans_installed
+		}
+	}
+	immediate = {
+		set_global_flag = wanderingleviathans_installed
+	}
+}
+
+# Assigns AI to specific countries with a delay.
+country_event = {
+	id = wanderingleviathans.2
+	fire_only_once = yes
+	hide_window = yes
+	trigger = {
+		is_ai = no
+		NOT = {
+			has_global_flag = wanderingleviathans_countries_marked
+		}
+	}
+	immediate = {
+		set_global_flag = wanderingleviathans_countries_marked
+		event_target:global_event_country = {
+			country_event = {
+				id = wanderingleviathans.3
+				days = 40
+			}
+		}
+	}
+}
+
+# Assign AI event.
+country_event = {
+	id = wanderingleviathans.3
+	is_triggered_only = yes
+	hide_window = yes
+	immediate = {
+		every_country = {
+			limit = {
+				wanderingleviathans_allowed_countries = yes
+			}
+			set_country_flag = wanderingleviathans_assisted_ai
+		}
+	}
+}
+
+# Flips Wandering Leviathans AI on a leviathan country, can be used in game via console command (select leviathan fleet, open console, and execute event wanderingleviathans.10_
+fleet_event = {
+	id = wanderingleviathans.10
+	is_triggered_only = yes
+	hide_window = yes
+	immediate = {
+		owner = {
+			country_event = {
+				id = wanderingleviathans.11
+			}
+		}
+	}
+}
+
+# Flips Wandering Leviathans AI on a leviathan country, direct event.
+country_event = {
+	id = wanderingleviathans.11
+	is_triggered_only = yes
+	hide_window = yes
+	immediate = {
+		if = {
+			limit = {
+				NOT = {
+					has_country_flag = wanderingleviathans_assisted_ai
+				}
+			}
+			set_country_flag = wanderingleviathans_assisted_ai
+		}
+		else = {
+			remove_country_flag = wanderingleviathans_assisted_ai
+		}
+	}
+}
+
+# Pretrigger AI event.
+event = {
+	id = wanderingleviathans.100
+	is_triggered_only = yes
+	hide_window = yes
+	trigger = {
+		NOT = {
+			has_global_flag = wanderingleviathans_disabled
+		}
+	}
+	immediate = {
+		every_country = {
+			limit = {
+				OR = {
+					has_country_flag = wanderingleviathans_assisted_ai
+					is_country_type = guardian_stellarite
+					is_country_type = guardian_dreadnought
+				}
+				NOT = {
+					has_country_flag = wanderingleviathans_country_disabled
+				}
+			}
+			every_owned_fleet = {
+				limit = {
+					# is_fleet_idle = yes	# Some might be on scripted patrol.
+					NOT = {
+						has_fleet_flag = wanderingleviathans_fleet_timeout
+					}
+				}
+				fleet_event = {
+					id = wanderingleviathans.200
+					days = 20
+					random = 20
+				}
+			}
+		}
+	}
+}
+
+fleet_event = {
+	id = wanderingleviathans.200
+	is_triggered_only = yes
+	hide_window = yes
+	immediate = {
+		solar_system = {
+			random_neighbor_system = {
+				limit = {
+					wanderingleviathans_allowed_systems = yes
+				}
+				set_timed_star_flag = {
+					flag = wanderingleviathans_star_forbidden
+					days = 720
+				}
+				save_event_target_as = wanderingleviathans_star_target
+			}
+		}
+		clear_orders = yes
+		clear_fleet_actions = this
+		if = {
+			limit = {
+				exists = event_target:wanderingleviathans_star_target
+			}
+			set_timed_fleet_flag = {
+				flag = wanderingleviathans_fleet_timeout
+				days = 720
+			}
+			every_owned_ship = {
+				add_modifier = {
+					modifier = wanderingleviathans_interstellar_voyage_slowdown
+					days = 720
+				}
+			}
+			queue_actions = {
+				move_to = event_target:wanderingleviathans_star_target
+			}
+		}
+	}
+}
+
+# Error log cleaner, do not use!
+event = {
+	id = wanderingleviathans.999
+	is_triggered_only = yes
+	hide_window = yes
+	immediate = {
+		set_global_flag = wanderingleviathans_disabled
+		set_country_flag = wanderingleviathans_assisted_ai
+		set_star_flag = wanderingleviathans_star_forbidden
+		set_country_flag = wanderingleviathans_country_forbidden
+		set_country_flag = wanderingleviathans_country_disabled
+	}
+}

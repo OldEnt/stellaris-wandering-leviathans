@@ -1,0 +1,42 @@
+# Only countries meeting these criteria will have their fleets piloted.
+wanderingleviathans_allowed_countries = {
+	OR = {
+		# is_country_type = guardian_stellarite		# Spawns later in the game.
+		# Insert countries to be marked _on game start only_
+	}
+}
+
+# Only neighbour solar systems meeting these criteria are valid as a destination target.
+wanderingleviathans_allowed_systems = {
+	OR = {
+		NOT = {
+			has_star_flag = wanderingleviathans_star_forbidden
+		}
+		NOR = {
+			has_star_flag = hostile_system
+			has_star_flag = pirate_system
+			has_star_flag = marauder_system
+			has_star_flag = guardian
+			has_star_flag = sealed_system
+			has_star_flag = empire_cluster
+			has_star_flag = empire_home_system
+			has_star_flag = lcluster
+			has_star_flag = enclave
+			has_star_flag = caravaneer_home
+			has_star_flag = guardians_artists_system
+			has_star_flag = guardians_curators_system
+			has_star_flag = guardians_traders_system
+		}
+		AND = {
+			exists = owner
+			owner = {
+				OR = {
+					has_country_flag = wanderingleviathans_country_forbidden
+					is_crisis_faction = yes
+					is_country_type = fallen_empire
+					is_country_type = awakened_fallen_empire
+				}
+			}
+		}
+	}
+}
